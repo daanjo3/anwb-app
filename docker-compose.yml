@@ -1,0 +1,18 @@
+services:
+  api:
+    build: ./api
+    depends_on:
+      - mongodb
+    environment:
+      - MONGO_CONN=mongodb://user:pass@mongodb
+    ports:
+      - 8080:8080
+  mongodb:
+    image: mongodb/mongodb-community-server:7.0.11-ubuntu2204
+    environment:
+      - MONGODB_INITDB_ROOT_USERNAME=user
+      - MONGODB_INITDB_ROOT_PASSWORD=pass
+    volumes:
+      - type: bind
+        source: ./mongo-data
+        target: /data/db
