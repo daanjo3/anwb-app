@@ -2,46 +2,35 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
-func GetClient() (*mongo.Client, error, func()) {
+func SetupMongoDB() (*mongo.Collection, *mongo.Client, context.Context, context.CancelFunc) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(os.Getenv("MONGO_CONN")))
 	if err != nil {
-		return nil, err, nil
+		panic(fmt.Sprintf("Mongo DB Connect issue %s", err))
 	}
-
-	cancelClient := func() {
-		if err = client.Disconnect(ctx); err != nil {
-			panic(err)
-		}
+	err = client.Ping(ctx, readpref.Primary())
+	if err != nil {
+		panic(fmt.Sprintf("Mongo DB ping issue %s", err))
 	}
-	return client, err, cancelClient
+	collection := client.Database("anwb-app").Collection("road-data")
+	return collection, client, ctx, cancel
 }
 
-func Update() error {
-	data, err := GetAnwbData()
-	if err != nil {
-		return err
-	}
-	var bdoc interface{}
-	err = bson.UnmarshalExtJSON(data, true, &bdoc)
-
-	client, error, cancel := GetClient()
-	if error != nil {
-		return err
-	}
-	defer cancel()
-	collection := client.Database("testing").Collection("numbers")
-	ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	res, err := collection.InsertOne(ctx, bson.D{{"name", "pi"}, {"value", 3.14159}})
-	id := res.InsertedID
+func CloseConnection(client *mongo.Client, context context.Context, cancel context.CancelFunc) {
+	defer func() {
+		cancel()
+		if err := client.Disconnect(context); err != nil {
+			panic(err)
+		}
+		fmt.Println("Close connection is called")
+	}()
 }
