@@ -1,43 +1,45 @@
 package main
 
 import (
-	"context"
 	"fmt"
-	"net/http"
-	"os"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/robfig/cron"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(os.Getenv("MONGO_CONN")))
+	err := godotenv.Load()
+	if err != nil {
+		panic(err)
+	}
 
-	defer func() {
-		if err = client.Disconnect(ctx); err != nil {
-			panic(err)
-		}
-	}()
-
-	ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-	err = client.Ping(ctx, readpref.Primary())
-
-	c := cron.New()
-	c.AddFunc("*/5 * * * * *", func() { fmt.Println("Running update function") })
-	c.Start()
+	// c := cron.New()
+	// c.AddFunc("*/5 * * * * *", func() {
+	// 	_, err := Update()
+	// 	if err != nil {
+	// 		fmt.Printf("Failed to update ANWB data %v", err)
+	// 	}
+	// })
+	// c.Start()
 
 	r := gin.Default()
-	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "Pong",
-		})
+	r.GET("/documents", func(c *gin.Context) {
+		indexes, err := ListDocuments()
+		if err != nil {
+			fmt.Printf("Failed to fetch ANWB document index %v", err)
+			c.Status(500)
+			return
+		}
+		c.JSON(200, indexes)
+	})
+	r.POST("/update", func(c *gin.Context) {
+		document, err := Update()
+		if err != nil {
+			fmt.Printf("Failed to update ANWB data %v", err)
+			c.Status(500)
+			return
+		}
+		c.JSON(200, document)
 	})
 	r.Run()
 }
