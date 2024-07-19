@@ -1,4 +1,4 @@
-package main
+package anwb
 
 import (
 	"encoding/json"
@@ -7,7 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type AnwbDoc struct {
+type Document struct {
 	Id         primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
 	UploadedAt string             `json:"_uploaded_at,omitempty" bson:"_uploaded_at,omitempty"`
 	Success    bool               `json:"success,omitempty" bson:"success,omitempty"`
@@ -19,7 +19,7 @@ type IndexEntry struct {
 	UploadedAt string             `json:"_uploaded_at,omitempty"`
 }
 
-func (doc *AnwbDoc) AsIndexEntry() IndexEntry {
+func (doc *Document) AsIndexEntry() IndexEntry {
 	return IndexEntry{
 		Id:         doc.Id,
 		UploadedAt: doc.UploadedAt,
@@ -88,15 +88,15 @@ type TotalEntry struct {
 	Count    int `json:"count,omitempty" bson:"count,omitempty"`
 }
 
-func GetAnwbDocument() (AnwbDoc, error) {
+func Get() (Document, error) {
 	resp, err := http.Get("https://api.anwb.nl/v2/incidents?apikey=***REMOVED***&polylines=true&polylineBounds=true&totals=true")
 	if err != nil {
-		return AnwbDoc{}, err
+		return Document{}, err
 	}
 	defer resp.Body.Close()
-	var document AnwbDoc
+	var document Document
 	if err := json.NewDecoder(resp.Body).Decode(&document); err != nil {
-		return AnwbDoc{}, err
+		return Document{}, err
 	}
 	return document, nil
 }

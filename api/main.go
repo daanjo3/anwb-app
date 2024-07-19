@@ -1,8 +1,7 @@
 package main
 
 import (
-	"fmt"
-
+	"github.com/daanjo3/anweb-app/api/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
@@ -23,16 +22,8 @@ func main() {
 	// c.Start()
 
 	r := gin.Default()
-	r.GET("/documents", GetDocuments)
-	r.GET("/documents/:id", GetDocumentById)
-	r.POST("/update", func(c *gin.Context) {
-		document, err := Update()
-		if err != nil {
-			fmt.Printf("Failed to update ANWB data %v", err)
-			c.Status(500)
-			return
-		}
-		c.JSON(200, document)
-	})
+	r.GET("/documents", service.GetDocuments)
+	r.GET("/documents/:id", service.GetDocumentById)
+	r.POST("/update", service.UpdateManual)
 	r.Run()
 }

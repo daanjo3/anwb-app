@@ -1,4 +1,4 @@
-package main
+package db
 
 import (
 	"context"
@@ -6,12 +6,16 @@ import (
 	"os"
 	"time"
 
+	"github.com/daanjo3/anweb-app/api/internal/anwb"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
+// TODO update connection structure following:
+// https://blog.stackademic.com/building-a-robust-rest-api-with-golang-gin-and-mongodb-701faa8961da
 func SetupMongoDB() (*mongo.Collection, *mongo.Client, context.Context, context.CancelFunc) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(os.Getenv("MONGO_CONN")))
@@ -36,17 +40,29 @@ func CloseConnection(client *mongo.Client, context context.Context, cancel conte
 	}()
 }
 
-func Get_Documents() ([]AnwbDoc, error) {
+func InsertDocument(data anwb.Document) (primitive.ObjectID, error) {
+	collection, client, context, cancel := SetupMongoDB()
+	defer CloseConnection(client, context, cancel)
+
+	data.Id = primitive.NewObjectID() // necessary?
+	result, err := collection.InsertOne(context, data)
+	if err != nil {
+		return primitive.NilObjectID, err
+	}
+	return result.InsertedID.(primitive.ObjectID), nil
+}
+
+func Get_Documents() ([]anwb.Document, error) {
 	collection, _, context, cancel := SetupMongoDB()
 	defer cancel()
-	var entryList []AnwbDoc
+	var entryList []anwb.Document
 	cursor, err := collection.Find(context, bson.D{})
 	defer cursor.Close(context)
 	if err != nil {
 		return nil, err
 	}
 	for cursor.Next(context) {
-		var entry AnwbDoc
+		var entry anwb.Document
 		err := cursor.Decode(&entry)
 		if err != nil {
 			return nil, err
@@ -56,17 +72,17 @@ func Get_Documents() ([]AnwbDoc, error) {
 	return entryList, nil
 }
 
-func Get_Document_ById(id string) (AnwbDoc, error) {
+func Get_Document_ById(id string) (anwb.Document, error) {
 	collection, _, context, cancel := SetupMongoDB()
 	defer cancel()
 	result := collection.FindOne(context, bson.D{})
 	if result.Err() != nil {
-		return AnwbDoc{}, result.Err()
+		return anwb.Document{}, result.Err()
 	}
-	var entry AnwbDoc
+	var entry anwb.Document
 	err := result.Decode(&entry)
 	if err != nil {
-		return AnwbDoc{}, err
+		return anwb.Document{}, err
 	}
 	return entry, nil
 }
