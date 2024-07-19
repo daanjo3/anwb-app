@@ -23,15 +23,8 @@ func main() {
 	// c.Start()
 
 	r := gin.Default()
-	r.GET("/documents", func(c *gin.Context) {
-		indexes, err := ListDocuments()
-		if err != nil {
-			fmt.Printf("Failed to fetch ANWB document index %v", err)
-			c.Status(500)
-			return
-		}
-		c.JSON(200, indexes)
-	})
+	r.GET("/documents", GetDocuments)
+	r.GET("/documents/:id", GetDocumentById)
 	r.POST("/update", func(c *gin.Context) {
 		document, err := Update()
 		if err != nil {

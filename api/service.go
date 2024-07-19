@@ -3,30 +3,31 @@ package main
 import (
 	"fmt"
 
-	"go.mongodb.org/mongo-driver/bson"
+	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func ListDocuments() ([]IndexEntry, error) {
-	collection, _, context, cancel := SetupMongoDB()
-	defer cancel()
-	var entryList []IndexEntry
-	cursor, err := collection.Find(context, bson.D{})
-	defer cursor.Close(context)
+func GetDocumentById(c *gin.Context) {
+	id := c.Params.ByName("id")
+	if len(id) == 0 {
+		c.Status(400)
+		fmt.Fprintf(c.Writer, "Could not find document with ID %v", id)
+	}
+	document, err := Get_Document_ById(id)
 	if err != nil {
-		return nil, err
+		c.Status(404)
+		fmt.Fprintf(c.Writer, "Could not find document with ID %v", id)
 	}
-	//  TODO make iterating the entries possible
-	for cursor.Next(context) {
-		var entry IndexEntry
-		err := cursor.Decode(&entry)
-		fmt.Printf("Entry: %+v", entry)
-		if err != nil {
-			return nil, err
-		}
-		entryList = append(entryList, entry)
+	c.JSON(200, document)
+}
+
+func GetDocuments(c *gin.Context) {
+	entries, err := Get_Documents()
+	if err != nil {
+		fmt.Fprintf(c.Writer, "Failed to fetch ANWB document index %v", err)
+		c.Status(500)
 	}
-	return entryList, nil
+	c.JSON(200, entries)
 }
 
 func Update() (AnwbDoc, error) {

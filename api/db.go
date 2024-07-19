@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -33,4 +34,39 @@ func CloseConnection(client *mongo.Client, context context.Context, cancel conte
 		}
 		fmt.Println("Close connection is called")
 	}()
+}
+
+func Get_Documents() ([]AnwbDoc, error) {
+	collection, _, context, cancel := SetupMongoDB()
+	defer cancel()
+	var entryList []AnwbDoc
+	cursor, err := collection.Find(context, bson.D{})
+	defer cursor.Close(context)
+	if err != nil {
+		return nil, err
+	}
+	for cursor.Next(context) {
+		var entry AnwbDoc
+		err := cursor.Decode(&entry)
+		if err != nil {
+			return nil, err
+		}
+		entryList = append(entryList, entry)
+	}
+	return entryList, nil
+}
+
+func Get_Document_ById(id string) (AnwbDoc, error) {
+	collection, _, context, cancel := SetupMongoDB()
+	defer cancel()
+	result := collection.FindOne(context, bson.D{})
+	if result.Err() != nil {
+		return AnwbDoc{}, result.Err()
+	}
+	var entry AnwbDoc
+	err := result.Decode(&entry)
+	if err != nil {
+		return AnwbDoc{}, err
+	}
+	return entry, nil
 }
