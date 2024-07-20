@@ -53,7 +53,7 @@ func GetDocuments(format DocumentFormat) ([]anwb.Document, error) {
 
 	opts := options.Find()
 	if format == DOC_FORMAT_INDEX {
-		opts.SetProjection(bson.D{{"_id", 1}, {"_uploaded_at", 1}})
+		opts.SetProjection(bson.D{{"_id", 1}, {"_uploaded_at", 1}}).SetSort(bson.D{{"_uploaded_at", -1}})
 	}
 	cursor, err := collection.Find(ctx, bson.D{}, opts)
 	defer cursor.Close(ctx)
