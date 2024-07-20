@@ -2,10 +2,14 @@ package anwb
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"os"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
+
+var anwbRequestUrl = fmt.Sprintf("https://api.anwb.nl/v2/incidents?apikey=%s&polylines=true&polylineBounds=true&totals=true", os.Getenv("ANWB_API_KEY"))
 
 type Document struct {
 	Id         primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
@@ -89,7 +93,7 @@ type TotalEntry struct {
 }
 
 func Get() (Document, error) {
-	resp, err := http.Get("https://api.anwb.nl/v2/incidents?apikey=***REMOVED***&polylines=true&polylineBounds=true&totals=true")
+	resp, err := http.Get(anwbRequestUrl)
 	if err != nil {
 		return Document{}, err
 	}
