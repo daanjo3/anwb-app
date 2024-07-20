@@ -2,15 +2,18 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"log/slog"
 	"time"
 
 	"github.com/daanjo3/anweb-app/api/internal/db"
+	"github.com/daanjo3/anweb-app/api/internal/handler"
 	"github.com/daanjo3/anweb-app/api/internal/service"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"github.com/robfig/cron"
+	"github.com/robfig/cron/v3"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
@@ -31,10 +34,10 @@ func main() {
 	defer db.Disconnect()
 	slog.Info("Connected to MongoDB")
 
+	// cronjob to run update every 5 minutes
 	c := cron.New()
-	// TODO fix cronjob, is currently every 5 seconds..
-	c.AddFunc("*/5 * * * * *", func() {
-		_, err := service.UpdateLocal()
+	c.AddFunc("*/5 * * * *", func() {
+		_, err := service.AddDocument(true)
 		if err != nil {
 			slog.Error("Failed to perform automatic update", "error", err)
 		}
@@ -43,8 +46,18 @@ func main() {
 	c.Start()
 
 	r := gin.Default()
-	r.GET("/documents", service.GetDocuments)
-	r.GET("/documents/:id", service.GetDocumentById)
-	r.POST("/update", service.UpdateManual)
+	r.Use(cors.Default())
+	r.GET("/documents", handler.ListDocuments)
+	r.GET("/documents/:id", handler.WithDocumentContext, func(c *gin.Context) {
+		document, exists := c.Get(handler.KEY_DOCUMENT)
+		if !exists {
+			// Should generally never be reached
+			c.Status(500)
+			fmt.Fprint(c.Writer, "Failed to find document")
+		}
+		c.JSON(200, document)
+	})
+	r.GET("/documents/:id/events/jams", handler.WithDocumentContext, handler.ListJams)
+	r.POST("/update", handler.UpdateManual)
 	r.Run()
 }

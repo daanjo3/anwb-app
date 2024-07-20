@@ -3,24 +3,23 @@ package anwb
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-var anwbRequestUrl = fmt.Sprintf("https://api.anwb.nl/v2/incidents?apikey=%s&polylines=true&polylineBounds=true&totals=true", os.Getenv("ANWB_API_KEY"))
-
 type Document struct {
 	Id         primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
-	UploadedAt string             `json:"_uploaded_at,omitempty" bson:"_uploaded_at,omitempty"`
+	UploadedAt primitive.DateTime `json:"_uploaded_at,omitempty" bson:"_uploaded_at,omitempty"`
 	Success    bool               `json:"success,omitempty" bson:"success,omitempty"`
 	Roads      []Road             `json:"roads,omitempty" bson:"roads,omitempty"`
 }
 
 type IndexEntry struct {
 	Id         primitive.ObjectID `json:"id,omitempty"`
-	UploadedAt string             `json:"_uploaded_at,omitempty"`
+	UploadedAt primitive.DateTime `json:"_uploaded_at,omitempty"`
 }
 
 func (doc *Document) AsIndexEntry() IndexEntry {
@@ -92,8 +91,23 @@ type TotalEntry struct {
 	Count    int `json:"count,omitempty" bson:"count,omitempty"`
 }
 
+var requestUrl *string
+
+func getRequestUrl() string {
+	if requestUrl != nil {
+		return *requestUrl
+	}
+	apiKey := os.Getenv("ANWB_API_KEY")
+	if apiKey == "" {
+		log.Fatal("No API key provided")
+	}
+	url := fmt.Sprintf("https://api.anwb.nl/v2/incidents?apikey=%s&polylines=true&polylineBounds=true&totals=true", apiKey)
+	requestUrl = &url
+	return *requestUrl
+}
+
 func Get() (Document, error) {
-	resp, err := http.Get(anwbRequestUrl)
+	resp, err := http.Get(getRequestUrl())
 	if err != nil {
 		return Document{}, err
 	}

@@ -2,57 +2,45 @@ package service
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/daanjo3/anweb-app/api/internal/anwb"
 	"github.com/daanjo3/anweb-app/api/internal/db"
-	"github.com/gin-gonic/gin"
 )
 
-// TODO set limit to the amount of resources retrieved by default
+// TODO add pagination
 // TODO add filtering options
-func GetDocuments(c *gin.Context) {
-	entries, err := db.GetDocuments()
-	if err != nil {
-		c.Status(500)
-		fmt.Fprintf(c.Writer, "Failed to fetch ANWB document index %v", err)
-	}
-	c.JSON(200, entries)
+func ListDocuments() ([]anwb.Document, error) {
+	return db.GetDocuments(db.DOC_FORMAT_INDEX)
 }
 
-func GetDocumentById(c *gin.Context) {
-	id := c.Params.ByName("id")
-	if len(id) == 0 {
-		c.Status(400)
-		fmt.Fprintf(c.Writer, "Could not find document with ID %v", id)
+func GetDocument(id string) (anwb.Document, error) {
+	isLatest := id == "latest"
+	if isLatest {
+		return db.GetDocumentLatest()
 	}
-	document, err := db.GetDocumentById(id)
-	if err != nil {
-		c.Status(404)
-		fmt.Fprintf(c.Writer, "Could not find document with ID %v", id)
-	}
-	c.JSON(200, document)
+	return db.GetDocumentById(id)
 }
 
-func UpdateManual(c *gin.Context) {
-	document, err := UpdateLocal()
-	if err != nil {
-		c.Status(500)
-		fmt.Fprintf(c.Writer, "Failed update ANWB document: %v", err)
-	}
-	c.JSON(201, document)
-}
-
-// TODO specify the errors
-func UpdateLocal() (anwb.Document, error) {
+func AddDocument(checkExistence bool) (anwb.Document, error) {
 	data, err := anwb.Get()
 	if err != nil {
 		return anwb.Document{}, err
 	}
-	// TODO check if document of this time already exists
+	if checkExistence {
+		exists, err := db.ExistsDocument(&data)
+		if err != nil {
+			return anwb.Document{}, err
+		}
+		if exists {
+			slog.Info("Did not update document as it already existed")
+			return data, nil
+		}
+	}
 	id, err := db.InsertDocument(data)
 	if err != nil {
 		return anwb.Document{}, err
 	}
-	fmt.Printf("Inserted new ANWB document with id %v", id)
+	slog.Info(fmt.Sprintf("Inserted new ANWB document with id %v", id))
 	return data, nil
 }
