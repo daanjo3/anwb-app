@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"log/slog"
+	"net/http"
 	"time"
 
 	"github.com/daanjo3/anweb-app/api/internal/db"
@@ -52,12 +52,14 @@ func main() {
 		document, exists := c.Get(handler.KEY_DOCUMENT)
 		if !exists {
 			// Should generally never be reached
-			c.Status(500)
-			fmt.Fprint(c.Writer, "Failed to find document")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to find document"})
+			return
 		}
 		c.JSON(200, document)
 	})
 	r.GET("/documents/:id/events/jams", handler.WithDocumentContext, handler.ListJams)
+	r.GET("/documents/:id/events/roadworks", handler.WithDocumentContext, handler.ListRoadWorks)
+	r.GET("/documents/:id/events/radars", handler.WithDocumentContext, handler.ListRadars)
 	r.POST("/update", handler.UpdateManual)
 	r.Run()
 }

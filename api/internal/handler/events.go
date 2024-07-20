@@ -1,27 +1,44 @@
 package handler
 
 import (
-	"fmt"
+	"log/slog"
+	"net/http"
 
 	"github.com/daanjo3/anweb-app/api/internal/anwb"
+	"github.com/daanjo3/anweb-app/api/internal/service"
 	"github.com/gin-gonic/gin"
 )
 
+// TODO bit less code duplication here would be nice
 func ListJams(c *gin.Context) {
-	// TODO make shared constant
-	allJams := make([]anwb.RoadInfo, 0)
 	document, exists := c.Get(KEY_DOCUMENT)
 	if !exists {
-		c.Status(500)
-		fmt.Fprint(c.Writer, "AWNB document handler failed")
+		slog.Error("Document did not exist in child handler")
+		c.JSON(http.StatusInternalServerError, "AWNB document handler failed")
 		return
 	}
-	for _, road := range document.(anwb.Document).Roads {
-		for _, segment := range road.Segments {
-			if len(segment.Jams) > 0 {
-				allJams = append(allJams, segment.Jams...)
-			}
-		}
+	jams := service.ListJams(document.(anwb.Document))
+	c.JSON(200, jams)
+}
+
+func ListRoadWorks(c *gin.Context) {
+	document, exists := c.Get(KEY_DOCUMENT)
+	if !exists {
+		slog.Error("Document did not exist in child handler")
+		c.JSON(http.StatusInternalServerError, "AWNB document handler failed")
+		return
 	}
-	c.JSON(200, allJams)
+	roadworks := service.ListRoadWorks(document.(anwb.Document))
+	c.JSON(200, roadworks)
+}
+
+func ListRadars(c *gin.Context) {
+	document, exists := c.Get(KEY_DOCUMENT)
+	if !exists {
+		slog.Error("Document did not exist in child handler")
+		c.JSON(http.StatusInternalServerError, "AWNB document handler failed")
+		return
+	}
+	radars := service.ListRadars(document.(anwb.Document))
+	c.JSON(200, radars)
 }

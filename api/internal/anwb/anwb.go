@@ -17,18 +17,6 @@ type Document struct {
 	Roads      []Road             `json:"roads,omitempty" bson:"roads,omitempty"`
 }
 
-type IndexEntry struct {
-	Id         primitive.ObjectID `json:"id,omitempty"`
-	UploadedAt primitive.DateTime `json:"_uploaded_at,omitempty"`
-}
-
-func (doc *Document) AsIndexEntry() IndexEntry {
-	return IndexEntry{
-		Id:         doc.Id,
-		UploadedAt: doc.UploadedAt,
-	}
-}
-
 type Road struct {
 	Road     string        `json:"road,omitempty" bson:"road,omitempty"`
 	RoadType string        `json:"type,omitempty" bson:"type,omitempty"`
@@ -36,14 +24,14 @@ type Road struct {
 }
 
 type RoadSegment struct {
-	Start     string     `json:"start,omitempty" bson:"start,omitempty"`
-	End       string     `json:"end,omitempty" bson:"end,omitempty"`
-	Jams      []RoadInfo `json:"jams,omitempty" bson:"jams,omitempty"`
-	Radars    []RoadInfo `json:"radars,omitempty" bson:"radars,omitempty"`
-	Roadworks []RoadInfo `json:"roadworks,omitempty" bson:"roadworks,omitempty"`
+	Start     string      `json:"start,omitempty" bson:"start,omitempty"`
+	End       string      `json:"end,omitempty" bson:"end,omitempty"`
+	Jams      []RoadEvent `json:"jams,omitempty" bson:"jams,omitempty"`
+	Radars    []RoadEvent `json:"radars,omitempty" bson:"radars,omitempty"`
+	Roadworks []RoadEvent `json:"roadworks,omitempty" bson:"roadworks,omitempty"`
 }
 
-type RoadInfo struct {
+type RoadEvent struct {
 	Id            int      `json:"id,omitempty" bson:"id,omitempty"`
 	Road          string   `json:"road,omitempty" bson:"road,omitempty"`
 	SegmentId     int      `json:"segmentId,omitempty" bson:"segmentId,omitempty"`
