@@ -7,6 +7,7 @@ import RoadInfoTable, {
   COLUMN_TEMPL_ROADWORK,
 } from './RoadInfoTable'
 import { Mark } from '@mui/material/Slider/useSlider.types'
+import { DateTime } from 'luxon'
 
 const asMarks = (indexList: DocumentIndex[]): Mark[] =>
   indexList.map((index) => {
@@ -25,6 +26,10 @@ function App() {
 
   const getIndexByDate = (millis: number) =>
     indexList.find((index) => index._uploaded_at.getTime() == millis)
+  const formatDate = (date: Date) =>
+    DateTime.fromJSDate(date)
+      .setLocale('nl-NL')
+      .toLocaleString(DateTime.DATETIME_FULL)
 
   // Fetch index on app render
   useEffect(() => {
@@ -54,7 +59,7 @@ function App() {
     if (!selected) {
       return
     }
-    const newHeader = selected?._uploaded_at.toLocaleTimeString()
+    const newHeader = formatDate(selected?._uploaded_at)
     if (newHeader != header) {
       // not sure if needed, want to avoid re-render
       setHeader(newHeader)
@@ -77,7 +82,7 @@ function App() {
       alert("Couldn't find index")
     }
     setSelected(index)
-  }, 400)
+  }, 200)
 
   return (
     <>
@@ -87,17 +92,14 @@ function App() {
           <Slider
             aria-label="Time instances"
             defaultValue={marks[0].value}
-            getAriaValueText={(v) =>
-              getIndexByDate(v as number)?._uploaded_at.toLocaleDateString() ??
-              '?'
-            }
+            getAriaValueText={(v) => formatDate(new Date(v as number)) ?? '?'}
             max={marks[0].value}
             min={marks[marks.length - 1].value}
             step={null}
             valueLabelDisplay="auto"
-            valueLabelFormat={(v) => new Date(v).toLocaleTimeString()}
+            valueLabelFormat={(v) => formatDate(new Date(v))}
             marks={marks}
-            onChange={(_, v) => sliderOnChange(v as number)}
+            onChangeCommitted={(_, v) => sliderOnChange(v as number)}
           />
         )}
         <Stack direction={'row'} spacing={1}>
