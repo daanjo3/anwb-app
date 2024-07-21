@@ -11,12 +11,15 @@ Finally the UI has two simple features. One feature is a slider that allows the 
 ## Running the app
 To run the app you can either use the docker compose file, or start each component natively.
 
+### API key
+This app requires an API key for the ANWB API. Reach out to a contributor for a working key. See the section running natively below on where to insert the key.
+
 ### Using docker compose
 Run `docker compose up` in the root directory.
 
 ### Running natively
 - Run `docker compose up mongodb` to get a running instance of the database.
-- Navigate to the api directory, run `go mod download` and then `go run .`.
+- Navigate to the api directory. Copy `.env.DIST` to `.env`, add the API key, run `go mod download` and then `go run .`.
 - Navigate to the app direction. Copy `.env.local.DIST` to `.env.local`, run `yarn install` and `yarn dev`.
 
 ## Considerations
