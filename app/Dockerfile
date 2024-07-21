@@ -15,4 +15,4 @@ COPY . .
 
 EXPOSE 5173/tcp
 ENTRYPOINT [ "yarn", "dev", "--host" ]
-# Ideally for a real production build you'd build the static pages and serve it using something like Nginx
+# TODO for a real production build you'd build the static pages and serve it using something like Nginx
