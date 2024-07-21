@@ -13,7 +13,7 @@ import (
 
 var KEY_DOCUMENT = "document"
 
-// TODO set limit to the amount of resources retrieved by default
+// TODO set limit to the amount of resources retrieved by default (see service TODO's)
 // TODO add filtering options
 func ListDocuments(c *gin.Context) {
 	entries, err := db.GetDocuments(db.DOC_FORMAT_INDEX)
@@ -31,7 +31,7 @@ func WithDocumentContext(c *gin.Context) {
 	var document anwb.Document
 	var err error
 	id := c.Params.ByName("id")
-	if len(id) == 0 {
+	if len(id) == 0 { // this should generally never be true, but for the sake of completeness
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "ID parameter is empty"})
 		return
 	}

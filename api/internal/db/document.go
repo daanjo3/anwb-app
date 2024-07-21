@@ -31,7 +31,7 @@ func InsertDocument(data anwb.Document) (primitive.ObjectID, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	data.Id = primitive.NewObjectID() // necessary?
+	data.Id = primitive.NewObjectID() // necessary or auto-generated?
 	result, err := collection.InsertOne(ctx, data)
 	if err != nil {
 		return primitive.NilObjectID, err

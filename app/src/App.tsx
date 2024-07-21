@@ -9,6 +9,8 @@ import RoadInfoTable, {
 import { Mark } from '@mui/material/Slider/useSlider.types'
 import { DateTime } from 'luxon'
 
+const API_URL = import.meta.env.VITE_API_URL
+
 const asMarks = (indexList: DocumentIndex[]): Mark[] =>
   indexList.map((index) => {
     const date = new Date(index._uploaded_at)
@@ -24,6 +26,8 @@ function App() {
   const [header, setHeader] = useState('')
   const [selected, setSelected] = useState<DocumentIndex | undefined>(undefined)
 
+  console.log(`URL: ${API_URL}`)
+
   const getIndexByDate = (millis: number) =>
     indexList.find((index) => index._uploaded_at.getTime() == millis)
   const formatDate = (date: Date) =>
@@ -34,7 +38,8 @@ function App() {
   // Fetch index on app render
   useEffect(() => {
     console.debug('Requesting index')
-    fetch('http://localhost:8080/documents')
+    // TODO proper error handling, probably create some API client. RTK-Query for example?
+    fetch(`${API_URL}/documents`)
       .then((r) => r.json())
       .then((indexes) =>
         setIndexList(
@@ -65,18 +70,17 @@ function App() {
       setHeader(newHeader)
     }
     console.debug('Requesting jams')
-    fetch(`http://localhost:8080/documents/${selected.id}/events/jams`)
+    fetch(`${API_URL}/documents/${selected.id}/events/jams`)
       .then((r) => r.json())
       .then((jams) => setJams(jams))
     console.debug('Requesting roadworks')
-    fetch(`http://localhost:8080/documents/${selected.id}/events/roadworks`)
+    fetch(`${API_URL}/documents/${selected.id}/events/roadworks`)
       .then((r) => r.json())
       .then((roadworks) => setRoadWorks(roadworks))
   }, [selected])
 
   const marks = useMemo(() => asMarks(indexList), [indexList])
   const sliderOnChange = debounce((v: number) => {
-    // unsure how this could be a number[] (but didn't check)
     const index = getIndexByDate(v)
     if (!index) {
       alert("Couldn't find index")
@@ -86,6 +90,9 @@ function App() {
 
   return (
     <>
+      {indexList.length == 0 && jams.length == 0 && roadworks.length == 0 && (
+        <Typography>No data could be loaded, is the API running?</Typography>
+      )}
       <Stack direction={'column'}>
         <Typography>{header}</Typography>
         {indexList.length > 0 && (
@@ -103,16 +110,20 @@ function App() {
           />
         )}
         <Stack direction={'row'} spacing={1}>
-          <RoadInfoTable
-            label="Traffic jams"
-            columnTempl={COLUMN_TEMPL_JAMS}
-            data={jams}
-          />
-          <RoadInfoTable
-            label="Road works"
-            columnTempl={COLUMN_TEMPL_ROADWORK}
-            data={roadworks}
-          />
+          {jams.length > 0 && (
+            <RoadInfoTable
+              label="Traffic jams"
+              columnTempl={COLUMN_TEMPL_JAMS}
+              data={jams}
+            />
+          )}
+          {roadworks.length > 0 && (
+            <RoadInfoTable
+              label="Road works"
+              columnTempl={COLUMN_TEMPL_ROADWORK}
+              data={roadworks}
+            />
+          )}
         </Stack>
       </Stack>
     </>

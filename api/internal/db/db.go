@@ -47,5 +47,5 @@ func Disconnect() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	client = nil // necessary?
+	client = nil // TODO check if required
 }
